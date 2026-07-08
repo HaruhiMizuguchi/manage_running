@@ -5,33 +5,83 @@
     <p class="muted">目的: ダイエット（継続・消費カロリー）とスピード向上（ペース改善）。</p>
   </section>
 
+  {% if imported is not none %}
+    <div class="alert success">
+      取り込み完了: {{ imported }} 件{% if skipped %}（スキップ {{ skipped }} 件）{% endif %}
+    </div>
+  {% endif %}
+
   <section class="cards">
     <div class="card">
       <div class="kpi">
-        <div class="kpi-label">取り込み済み（全アクティビティ）</div>
-        <div class="kpi-value">{{ total }}</div>
+        <div class="kpi-label">今週の走行距離</div>
+        <div class="kpi-value">{{ goals.this_week_km | round(1) }} km</div>
+        <div class="kpi-sub muted">目標 {{ goals.weekly_goal_km | round(1) }} km（{{ goals.weekly_progress_pct | round(0) }}%）</div>
+        <div class="progress"><div class="progress-bar" style="width: {{ goals.weekly_progress_pct | round(0) }}%"></div></div>
       </div>
     </div>
     <div class="card">
       <div class="kpi">
-        <div class="kpi-label">取り込み済み（ラン）</div>
-        <div class="kpi-value">{{ runs }}</div>
+        <div class="kpi-label">今週の消費カロリー</div>
+        <div class="kpi-value">{{ dashboard.this_week.calories | round(0) }}</div>
+        <div class="kpi-sub muted">{{ dashboard.this_week.runs }} 回のラン</div>
       </div>
     </div>
     <div class="card">
       <div class="kpi">
-        <div class="kpi-label">次にやること</div>
-        <div class="kpi-value kpi-text">
-          <a class="btn" href="/import">Stravaエクスポートを取り込む</a>
-        </div>
+        <div class="kpi-label">5km換算ベスト</div>
+        {% if dashboard.best_5k %}
+          <div class="kpi-value">{{ dashboard.best_5k.projected_5k_s | fmt_pace_from_sec }}</div>
+          <div class="kpi-sub muted">
+            {% if goals.target_5k_s %}
+              目標 {{ goals.target_5k_s | fmt_duration }}
+              {% if goals.best_5k_gap_s is not none %}
+                （{% if goals.best_5k_gap_s <= 0 %}達成{% else %}+{{ goals.best_5k_gap_s | fmt_duration }}{% endif %}）
+              {% endif %}
+            {% else %}
+              <a href="/goals">目標を設定</a>
+            {% endif %}
+          </div>
+        {% else %}
+          <div class="kpi-value kpi-text muted">データ不足</div>
+        {% endif %}
       </div>
+    </div>
+    <div class="card">
+      <div class="kpi">
+        <div class="kpi-label">体重の変化（30日）</div>
+        {% if dashboard.weight_change %}
+          <div class="kpi-value">{{ dashboard.weight_change.change_kg | round(1) }} kg</div>
+          <div class="kpi-sub muted">{{ dashboard.weight_change.latest_weight_kg }} kg（{{ dashboard.weight_change.latest_date }}）</div>
+        {% else %}
+          <div class="kpi-value kpi-text muted"><a href="/weight">体重を記録</a></div>
+        {% endif %}
+      </div>
+    </div>
+  </section>
+
+  <section class="grid-2 section">
+    <div class="card chart-card">
+      <h2>週次走行距離（12週）</h2>
+      <canvas id="weeklyDistanceChart" height="180"></canvas>
+    </div>
+    <div class="card chart-card">
+      <h2>ペース推移（3km以上・直近20回）</h2>
+      <canvas id="paceTrendChart" height="180"></canvas>
+    </div>
+  </section>
+
+  <section class="section">
+    <div class="card chart-card">
+      <h2>体重と走行距離（週次）</h2>
+      <canvas id="weightDistanceChart" height="120"></canvas>
     </div>
   </section>
 
   <section class="section">
     <h2>最新のラン</h2>
-    {% if latest|length == 0 %}
-      <p class="muted">まだランデータがありません。まずは取り込みを実行してください。</p>
+    {% if dashboard.latest|length == 0 %}
+      <p class="muted">まだランデータがありません。<a href="/import">Stravaエクスポートを取り込む</a></p>
     {% else %}
       <div class="table-wrap">
         <table>
@@ -41,15 +91,17 @@
               <th>名前</th>
               <th class="right">距離</th>
               <th class="right">時間</th>
+              <th class="right">ペース</th>
             </tr>
           </thead>
           <tbody>
-            {% for a in latest %}
+            {% for a in dashboard.latest %}
               <tr>
-                <td>{{ a["start_date_local"] or "-" }}</td>
-                <td><a href="/runs/{{ a['id'] }}">{{ a["name"] or "(no name)" }}</a></td>
-                <td class="right">{{ (a["distance_m"] or 0) | round(0) }} m</td>
-                <td class="right">{{ a["moving_time_s"] or "-" }} s</td>
+                <td>{{ (a.start_date_local or "-")[:10] }}</td>
+                <td><a href="/runs/{{ a.id }}">{{ a.name or "(no name)" }}</a></td>
+                <td class="right">{{ a.distance_m | fmt_km }}</td>
+                <td class="right">{{ a.moving_time_s | fmt_duration }}</td>
+                <td class="right">{{ fmt_pace_for(a.distance_m, a.moving_time_s) }}</td>
               </tr>
             {% endfor %}
           </tbody>
@@ -57,4 +109,100 @@
       </div>
     {% endif %}
   </section>
+
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+  <script>
+    const weekly = {{ dashboard.weekly | tojson }};
+    const paceTrend = {{ dashboard.pace_trend | tojson }};
+    const weightVsDistance = {{ dashboard.weight_vs_distance | tojson }};
+    const weeklyGoalKm = {{ goals.weekly_goal_km }};
+
+    const chartDefaults = {
+      color: '#a7b2dd',
+      borderColor: 'rgba(255,255,255,0.08)',
+    };
+    Chart.defaults.color = chartDefaults.color;
+    Chart.defaults.borderColor = chartDefaults.borderColor;
+
+    if (weekly.length) {
+      new Chart(document.getElementById('weeklyDistanceChart'), {
+        type: 'bar',
+        data: {
+          labels: weekly.map(w => w.week_start),
+          datasets: [{
+            label: '距離 (km)',
+            data: weekly.map(w => (w.distance_m / 1000).toFixed(2)),
+            backgroundColor: 'rgba(122,162,255,0.55)',
+          }, {
+            type: 'line',
+            label: '目標 (km)',
+            data: weekly.map(() => weeklyGoalKm),
+            borderColor: 'rgba(101,255,211,0.9)',
+            borderDash: [6, 4],
+            pointRadius: 0,
+            fill: false,
+          }],
+        },
+        options: { scales: { y: { beginAtZero: true } } },
+      });
+    }
+
+    if (paceTrend.length) {
+      new Chart(document.getElementById('paceTrendChart'), {
+        type: 'line',
+        data: {
+          labels: paceTrend.map(p => p.date),
+          datasets: [{
+            label: 'ペース (秒/km)',
+            data: paceTrend.map(p => p.pace_sec_per_km),
+            borderColor: 'rgba(255,180,120,0.95)',
+            backgroundColor: 'rgba(255,180,120,0.15)',
+            tension: 0.25,
+            fill: true,
+          }],
+        },
+        options: {
+          scales: {
+            y: {
+              reverse: true,
+              ticks: {
+                callback: (v) => {
+                  const m = Math.floor(v / 60);
+                  const s = Math.round(v % 60).toString().padStart(2, '0');
+                  return `${m}:${s}`;
+                },
+              },
+            },
+          },
+        },
+      });
+    }
+
+    if (weightVsDistance.length) {
+      new Chart(document.getElementById('weightDistanceChart'), {
+        data: {
+          labels: weightVsDistance.map(w => w.week_start),
+          datasets: [{
+            type: 'line',
+            label: '体重 (kg)',
+            data: weightVsDistance.map(w => w.avg_weight_kg),
+            borderColor: 'rgba(255,140,180,0.95)',
+            yAxisID: 'y',
+          }, {
+            type: 'bar',
+            label: '走行距離 (km)',
+            data: weightVsDistance.map(w => w.distance_km),
+            backgroundColor: 'rgba(122,162,255,0.45)',
+            yAxisID: 'y1',
+          }],
+        },
+        options: {
+          scales: {
+            y: { position: 'left', beginAtZero: false },
+            y1: { position: 'right', beginAtZero: true, grid: { drawOnChartArea: false } },
+          },
+        },
+      });
+    }
+  </script>
 {% endblock %}

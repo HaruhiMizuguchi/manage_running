@@ -2,26 +2,32 @@
 {% block content %}
   <section class="hero">
     <h1>{{ a["name"] or "(no name)" }}</h1>
-    <p class="muted">{{ a["start_date_local"] or "-" }}</p>
+    <p class="muted">{{ (a["start_date_local"] or "-")[:19] }}</p>
   </section>
 
   <section class="cards">
     <div class="card">
       <div class="kpi">
         <div class="kpi-label">距離</div>
-        <div class="kpi-value">{{ (a["distance_m"] or 0) | round(0) }} m</div>
+        <div class="kpi-value">{{ a["distance_m"] | fmt_km }}</div>
       </div>
     </div>
     <div class="card">
       <div class="kpi">
         <div class="kpi-label">移動時間</div>
-        <div class="kpi-value">{{ a["moving_time_s"] or "-" }} s</div>
+        <div class="kpi-value">{{ a["moving_time_s"] | fmt_duration }}</div>
       </div>
     </div>
     <div class="card">
       <div class="kpi">
-        <div class="kpi-label">平均速度</div>
-        <div class="kpi-value">{{ a["average_speed_mps"] or "-" }} m/s</div>
+        <div class="kpi-label">平均ペース</div>
+        <div class="kpi-value">{{ fmt_pace_for(a["distance_m"], a["moving_time_s"]) }}</div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="kpi">
+        <div class="kpi-label">消費カロリー</div>
+        <div class="kpi-value">{{ (a["calories"] or 0) | round(0) }}</div>
       </div>
     </div>
   </section>
@@ -31,12 +37,11 @@
     <div class="table-wrap">
       <table>
         <tbody>
-          {% for k in a.keys() %}
-            <tr>
-              <th>{{ k }}</th>
-              <td>{{ a[k] }}</td>
-            </tr>
-          {% endfor %}
+          <tr><th>獲得標高</th><td>{{ (a["total_elevation_gain_m"] or 0) | round(0) }} m</td></tr>
+          <tr><th>平均心拍</th><td>{{ a["average_heartrate"] or "-" }} bpm</td></tr>
+          <tr><th>最大心拍</th><td>{{ a["max_heartrate"] or "-" }} bpm</td></tr>
+          <tr><th>最大速度</th><td>{{ a["max_speed_mps"] or "-" }} m/s</td></tr>
+          <tr><th>Strava ID</th><td>{{ a["strava_activity_id"] or "-" }}</td></tr>
         </tbody>
       </table>
     </div>

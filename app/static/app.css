@@ -38,7 +38,15 @@ h1{margin:12px 0 6px;font-size:28px}
 h2{margin:0 0 10px;font-size:18px}
 .muted{color:var(--muted)}
 .small{font-size:12px}
-.cards{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin:14px 0 16px}
+.cards{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin:14px 0 16px}
+.grid-2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.chart-card h2{margin:0 0 12px;font-size:16px}
+.kpi-sub{margin-top:6px;font-size:12px}
+.progress{height:8px;background:rgba(255,255,255,.08);border-radius:999px;overflow:hidden;margin-top:10px}
+.progress-bar{height:100%;background:linear-gradient(90deg, rgba(122,162,255,.95), rgba(101,255,211,.9))}
+.alert{padding:12px 14px;border-radius:12px;margin:12px 0;border:1px solid var(--border)}
+.alert.success{background:rgba(101,255,211,.12);border-color:rgba(101,255,211,.35)}
+.good{color:#65ffd3}
 .card{
   background: linear-gradient(180deg, rgba(255,255,255,.06), rgba(255,255,255,.03));
   border: 1px solid var(--border);
@@ -87,5 +95,6 @@ tr:hover td{background:rgba(255,255,255,.03)}
 .check{display:flex;gap:10px;align-items:center;color:var(--muted);font-size:13px}
 @media (max-width: 860px){
   .cards{grid-template-columns:1fr}
+  .grid-2{grid-template-columns:1fr}
   .row{grid-template-columns:1fr}
 }
