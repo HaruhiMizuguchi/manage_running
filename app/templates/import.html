@@ -1,0 +1,20 @@
+{% extends "base.html" %}
+{% block content %}
+  <section class="hero">
+    <h1>Stravaエクスポート取り込み</h1>
+    <p class="muted">Stravaの「データエクスポート」ZIP（推奨）または activities.csv をアップロードしてください。</p>
+  </section>
+
+  <form class="card form" method="post" enctype="multipart/form-data" action="/import">
+    <label class="label">ファイル（.zip / .csv）</label>
+    <input class="input" type="file" name="file" accept=".zip,.csv" required />
+
+    <label class="check">
+      <input type="checkbox" name="only_runs" value="true" checked />
+      ランのみ取り込む（推奨）
+    </label>
+
+    <button class="btn" type="submit">取り込み</button>
+    <p class="muted small">同じActivity IDは更新（上書き）されます。</p>
+  </form>
+{% endblock %}
