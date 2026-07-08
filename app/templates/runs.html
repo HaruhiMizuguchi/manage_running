@@ -1,0 +1,40 @@
+{% extends "base.html" %}
+{% block content %}
+  <section class="hero">
+    <h1>ラン一覧</h1>
+    <p class="muted">最新500件まで表示します。</p>
+  </section>
+
+  <section class="section">
+    {% if rows|length == 0 %}
+      <p class="muted">ランがありません。まずは取り込みを実行してください。</p>
+    {% else %}
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>日付</th>
+              <th>名前</th>
+              <th class="right">距離</th>
+              <th class="right">時間</th>
+              <th class="right">獲得標高</th>
+              <th class="right">平均HR</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for a in rows %}
+              <tr>
+                <td>{{ a["start_date_local"] or "-" }}</td>
+                <td><a href="/runs/{{ a['id'] }}">{{ a["name"] or "(no name)" }}</a></td>
+                <td class="right">{{ (a["distance_m"] or 0) | round(0) }} m</td>
+                <td class="right">{{ a["moving_time_s"] or "-" }} s</td>
+                <td class="right">{{ (a["total_elevation_gain_m"] or 0) | round(0) }} m</td>
+                <td class="right">{{ a["average_heartrate"] or "-" }}</td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    {% endif %}
+  </section>
+{% endblock %}

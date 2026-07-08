@@ -1,0 +1,32 @@
+<!doctype html>
+<html lang="ja">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>{{ title or "Run Manager" }}</title>
+    <link rel="stylesheet" href="/static/app.css" />
+  </head>
+  <body>
+    <header class="topbar">
+      <div class="container">
+        <div class="brand"><a href="/">Run Manager</a></div>
+        <nav class="nav">
+          <a href="/">ダッシュボード</a>
+          <a href="/import">取り込み</a>
+          <a href="/runs">ラン</a>
+          <a href="/weight">体重</a>
+        </nav>
+      </div>
+    </header>
+
+    <main class="container">
+      {% block content %}{% endblock %}
+    </main>
+
+    <footer class="footer">
+      <div class="container">
+        <span class="muted">Stravaエクスポート（ZIP/CSV）からローカル管理します。</span>
+      </div>
+    </footer>
+  </body>
+</html>
