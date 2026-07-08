@@ -48,14 +48,15 @@ def home(request: Request):
             """
         ).fetchall()
     return TEMPLATES.TemplateResponse(
+        request,
         "home.html",
-        {"request": request, "total": total, "runs": runs, "latest": latest},
+        {"total": total, "runs": runs, "latest": latest},
     )
 
 
 @app.get("/import", response_class=HTMLResponse)
 def import_page(request: Request):
-    return TEMPLATES.TemplateResponse("import.html", {"request": request})
+    return TEMPLATES.TemplateResponse(request, "import.html", {})
 
 
 @app.post("/import")
@@ -131,7 +132,7 @@ def runs_page(request: Request):
             LIMIT 500
             """
         ).fetchall()
-    return TEMPLATES.TemplateResponse("runs.html", {"request": request, "rows": rows})
+    return TEMPLATES.TemplateResponse(request, "runs.html", {"rows": rows})
 
 
 @app.get("/runs/{run_id}", response_class=HTMLResponse)
@@ -143,7 +144,7 @@ def run_detail(request: Request, run_id: int):
         ).fetchone()
     if not row:
         return HTMLResponse("Not found", status_code=404)
-    return TEMPLATES.TemplateResponse("run_detail.html", {"request": request, "a": row})
+    return TEMPLATES.TemplateResponse(request, "run_detail.html", {"a": row})
 
 
 @app.get("/weight", response_class=HTMLResponse)
@@ -152,7 +153,7 @@ def weight_page(request: Request):
         rows = conn.execute(
             "SELECT date, weight_kg, note FROM weight_logs ORDER BY date DESC LIMIT 365"
         ).fetchall()
-    return TEMPLATES.TemplateResponse("weight.html", {"request": request, "rows": rows})
+    return TEMPLATES.TemplateResponse(request, "weight.html", {"rows": rows})
 
 
 @app.post("/weight")
